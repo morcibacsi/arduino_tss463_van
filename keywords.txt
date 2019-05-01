@@ -1,0 +1,30 @@
+#######################################
+# Syntax Coloring Map For debug_lvc
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+TSS463_VAN	KEYWORD1
+MessageLengthAndStatusRegister	KEYWORD1
+Id2AndCommandRegister	KEYWORD1
+MessagePointerRegister	KEYWORD1
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+set_channel_for_transmit_message	KEYWORD2
+set_channel_for_receive_message	KEYWORD2
+set_channel_for_reply_request_message_without_transmission	KEYWORD2
+set_channel_for_reply_request_message	KEYWORD2
+set_channel_for_immediate_reply_message	KEYWORD2
+set_channel_for_deferred_reply_message	KEYWORD2
+set_channel_for_reply_request_detection_message	KEYWORD2
+disable_channel	KEYWORD2
+message_available	KEYWORD2
+readMsgBuf	KEYWORD2
+getlastChannel	KEYWORD2
+begin	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
