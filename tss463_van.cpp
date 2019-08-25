@@ -214,7 +214,7 @@ void TSS463_VAN::registers_set(const uint8_t address, const uint8_t values[], co
     if (res != CMD_ANSW)
     error++;
     _delay_ms(15);
-
+  
     for (i = 0; i < count; i++)
     {
         spi_transfer(values[i]);
@@ -389,7 +389,7 @@ void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint8_t id1
 : After transmission :   0 :   1 : Unchanged  :    1 :
 :....................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t setAck)
 {
     //Page38
     Id2AndCommandRegister id2Command;
@@ -403,7 +403,7 @@ void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint8_t id1,
     //Page38
     MessagePointerRegister messagePointer;
     memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 1;
+    messagePointer.data.DRAK = (setAck == 1) ? 0 : 1;
     messagePointer.data.M_P = channelId*30;
 
     //Page 39
@@ -462,7 +462,7 @@ void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint
 : After reception(of reply)           :   1 :   1 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t requireAck)
 {
     //Page38
     Id2AndCommandRegister id2Command;
@@ -471,7 +471,7 @@ void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint8_
     id2Command.data.RNW = 1;
     id2Command.data.RTR = 1;
     id2Command.data.EXT = 1;
-    id2Command.data.RAK = 0;
+    id2Command.data.RAK = requireAck;
 
     //Page38
     MessagePointerRegister messagePointer;
@@ -537,7 +537,7 @@ void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength)
+void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
 {
     //Page38
     Id2AndCommandRegister id2Command;
@@ -551,7 +551,7 @@ void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint8
     //Page38
     MessagePointerRegister messagePointer;
     memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 1;
+    messagePointer.data.DRAK = (setAck == 1) ? 0 : 1;
     messagePointer.data.M_P = channelId * 30;
 
     //Page 39

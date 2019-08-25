@@ -33,13 +33,13 @@ void van_setup_channel(int channel)
             VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 0x00, 30);
             break;
         case 1:
-            VANInterface->set_channel_for_receive_message(channel, 0x00, 0x00, 30);
+            VANInterface->set_channel_for_receive_message(channel, 0x00, 0x00, 30, 0);
             break;
         case 2:
             VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 0x00, 30);
             break;
         case 3:
-            VANInterface->set_channel_for_receive_message(channel, 0x00, 0x00, 30);
+            VANInterface->set_channel_for_receive_message(channel, 0x00, 0x00, 30, 0);
             break;
         default:
             break;

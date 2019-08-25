@@ -27,9 +27,9 @@ TSS463_VAN *VAN;
           VAN->set_channel_for_transmit_message(channelId, id1, id2, values, messageLength, requireAck);
       }
 
-      virtual void set_channel_for_receive_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+      virtual void set_channel_for_receive_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t setAck)
       {
-          VAN->set_channel_for_receive_message(channelId, id1, id2, messageLength);
+          VAN->set_channel_for_receive_message(channelId, id1, id2, messageLength, setAck);
       }
 
       virtual void set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
@@ -37,9 +37,9 @@ TSS463_VAN *VAN;
           VAN->set_channel_for_reply_request_message_without_transmission(channelId, id1, id2, messageLength);
       }
 
-      virtual void set_channel_for_reply_request_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+      virtual void set_channel_for_reply_request_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t requireAck)
       {
-          VAN->set_channel_for_reply_request_message(channelId, id1, id2, messageLength);
+          VAN->set_channel_for_reply_request_message(channelId, id1, id2, messageLength, requireAck);
       }
 
       virtual void set_channel_for_immediate_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength)
@@ -47,9 +47,9 @@ TSS463_VAN *VAN;
           VAN->set_channel_for_immediate_reply_message(channelId, id1, id2, values, messageLength);
       }
 
-      virtual void set_channel_for_deferred_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength)
+      virtual void set_channel_for_deferred_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
       {
-          VAN->set_channel_for_deferred_reply_message(channelId, id1, id2, values, messageLength);
+          VAN->set_channel_for_deferred_reply_message(channelId, id1, id2, values, messageLength, setAck);
       }
 
       virtual void set_channel_for_reply_request_detection_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
