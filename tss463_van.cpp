@@ -58,7 +58,7 @@ void TSS463_VAN::tss_init()
     */
     #pragma endregion
 
-    register_set(TRANSMITCONTROL, B00110011); // MR: 0011 (Maximum Retries = 0x03) VER 001 fixed
+    register_set(TRANSMITCONTROL, B00000011); // MR: 0011 (Maximum Retries = 0x01) VER 001 fixed
     _delay_ms(10);
 
 
