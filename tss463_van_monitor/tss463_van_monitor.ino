@@ -7,6 +7,8 @@ AbstractVanMessageSender *VANInterface;
 uint8_t vanMessageLength;
 uint8_t vanMessage[32];
 
+uint8_t headerByte = 0x80;
+
 char incomingByte;
 
 void setup()
@@ -22,7 +24,7 @@ void setup()
     van_setup_channel(0); //#1 reply request message
     van_setup_channel(1); //#2 receive message
     van_setup_channel(2); //#3 reply request without transmission message
-    van_setup_channel(3); //#4 deferred reply message
+    van_setup_channel(3); //#4 deferred reply request detection message
 }
 
 void van_setup_channel(int channel)
@@ -39,7 +41,7 @@ void van_setup_channel(int channel)
             VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 0x00, 30);
             break;
         case 3:
-            VANInterface->set_channel_for_receive_message(channel, 0x00, 0x00, 30, 0);
+            VANInterface->set_channel_for_reply_request_detection_message(channel, 0x00, 0x00, 30);
             break;
         default:
             break;
@@ -60,6 +62,37 @@ void SendExternalTemperature(int temperature)
     VANInterface->disable_channel(4);
 }
 
+/* 
+    The message id 0x564 is asked by the multifunction display. If we remove the display from the car the message dissappears.
+    With the help of this method we can query the info from the BSI without having the display in the car.
+    We need to ask periodically.
+*/
+void QueryCarStatusWithTripInfo()
+{
+    VANInterface->set_channel_for_reply_request_message(3, 0x56, 0x4, 29, 1);
+}
+
+/*
+    The display asks for the presence of the CD changer. 
+    With the help of this method we can fool the display that there is a CD changer installed.
+    We need to set this periodically.
+*/
+void AnswerToCDC()
+{
+    headerByte = (headerByte == 0x87) ? 0x80 : headerByte + 1;
+
+    uint8_t status = 0xC3; //playing
+    uint8_t cartridge = 0x16;
+    uint8_t minutes = 0x01;
+    uint8_t seconds = 0x56;
+    uint8_t trackNo = 0x17;
+    uint8_t cdNo = 0x02;
+    uint8_t trackCount = 0x21;
+
+    uint8_t packet[12] = { headerByte, 0x00, status, cartridge, minutes, seconds, trackNo, cdNo, trackCount, 0x3f, 0x01, headerByte };
+    VANInterface->set_channel_for_immediate_reply_message(3, 0x4E, 0xC, packet, 12);
+}
+
 void loop() {
     if (Serial.available()>0)
     {
@@ -76,6 +109,15 @@ void loop() {
             }
             case 't': {
                 SendExternalTemperature(10);
+                break;
+            }
+            case 'q': {
+                QueryCarStatusWithTripInfo();
+                break;
+            }
+            case 'a': {
+                AnswerToCDC();
+                break;
             }
             default:
                 break;
