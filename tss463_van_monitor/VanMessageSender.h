@@ -22,39 +22,39 @@ TSS463_VAN *VAN;
           VAN = new TSS463_VAN(vanPin);
       }
 
-      virtual void set_channel_for_transmit_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)
+      virtual void set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)
       {
-          VAN->set_channel_for_transmit_message(channelId, id1, id2, values, messageLength, requireAck);
+          VAN->set_channel_for_transmit_message(channelId, identifier, values, messageLength, requireAck);
       }
 
-      virtual void set_channel_for_receive_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t setAck)
+      virtual void set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck)
       {
-          VAN->set_channel_for_receive_message(channelId, id1, id2, messageLength, setAck);
+          VAN->set_channel_for_receive_message(channelId, identifier, messageLength, setAck);
       }
 
-      virtual void set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+      virtual void set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
       {
-          VAN->set_channel_for_reply_request_message_without_transmission(channelId, id1, id2, messageLength);
+          VAN->set_channel_for_reply_request_message_without_transmission(channelId, identifier, messageLength);
       }
 
-      virtual void set_channel_for_reply_request_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t requireAck)
+      virtual void set_channel_for_reply_request_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t requireAck)
       {
-          VAN->set_channel_for_reply_request_message(channelId, id1, id2, messageLength, requireAck);
+          VAN->set_channel_for_reply_request_message(channelId, identifier, messageLength, requireAck);
       }
 
-      virtual void set_channel_for_immediate_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength)
+      virtual void set_channel_for_immediate_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength)
       {
-          VAN->set_channel_for_immediate_reply_message(channelId, id1, id2, values, messageLength);
+          VAN->set_channel_for_immediate_reply_message(channelId, identifier, values, messageLength);
       }
 
-      virtual void set_channel_for_deferred_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
+      virtual void set_channel_for_deferred_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
       {
-          VAN->set_channel_for_deferred_reply_message(channelId, id1, id2, values, messageLength, setAck);
+          VAN->set_channel_for_deferred_reply_message(channelId, identifier, values, messageLength, setAck);
       }
 
-      virtual void set_channel_for_reply_request_detection_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+      virtual void set_channel_for_reply_request_detection_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
       {
-          VAN->set_channel_for_reply_request_detection_message(channelId, id1, id2, messageLength);
+          VAN->set_channel_for_reply_request_detection_message(channelId, identifier, messageLength);
       }
 
       virtual MessageLengthAndStatusRegister message_available(uint8_t channelId)

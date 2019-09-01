@@ -6,6 +6,12 @@ int ExtractBits(const int value, const int numberOfBits, const int pos)
     return (((1 << numberOfBits) - 1) & (value >> (pos - 1)));
 }
 
+void GetBytesFromIdentifier(uint16_t iden, uint8_t *byte1, uint8_t *byte2)
+{
+    *byte1 = (uint8_t) (((iden << 4) & 0xff00) >> 8);
+    *byte2 = (uint8_t) (iden & 0xF);
+}
+
 void TSS463_VAN::tss_init() 
 {
     motorolla_mode();
@@ -351,8 +357,12 @@ void TSS463_VAN::setup_channel(const uint8_t channelId, const uint8_t id1, const
 :....................:.....:.....:......:............:
 */
 //Page 44 contains how the RNW, RTR, CHTx, CHRx registers should be configured to send a message on a channel
-void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)
+void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));
@@ -389,8 +399,12 @@ void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint8_t id1
 : After transmission :   0 :   1 : Unchanged  :    1 :
 :....................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t setAck)
+void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));
@@ -425,8 +439,12 @@ void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint8_t id1,
 : After transmission :   1 :   1 : Unchanged  :    1 :
 :....................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));
@@ -462,8 +480,12 @@ void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint
 : After reception(of reply)           :   1 :   1 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength, uint8_t requireAck)
+void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t requireAck)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));
@@ -498,8 +520,12 @@ void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint8_
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength)
+void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));
@@ -537,8 +563,12 @@ void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint8_t id1, uint8_t id2, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
+void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));
@@ -576,8 +606,12 @@ void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint8
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_detection_message(uint8_t channelId, uint8_t id1, uint8_t id2, uint8_t messageLength)
+void TSS463_VAN::set_channel_for_reply_request_detection_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
 {
+    uint8_t id1;
+    uint8_t id2;
+    GetBytesFromIdentifier(identifier, &id1, &id2);
+
     //Page38
     Id2AndCommandRegister id2Command;
     memset(&id2Command, 0, sizeof(id2Command));

@@ -32,16 +32,16 @@ void van_setup_channel(int channel)
     switch (channel)
     {
         case 0:
-            VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 0x00, 30);
+            VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 30);
             break;
         case 1:
-            VANInterface->set_channel_for_receive_message(channel, 0x00, 0x00, 30, 0);
+            VANInterface->set_channel_for_receive_message(channel, 0x00, 30, 0);
             break;
         case 2:
-            VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 0x00, 30);
+            VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 30);
             break;
         case 3:
-            VANInterface->set_channel_for_reply_request_detection_message(channel, 0x00, 0x00, 30);
+            VANInterface->set_channel_for_reply_request_detection_message(channel, 0x00, 30);
             break;
         default:
             break;
@@ -51,25 +51,25 @@ void van_setup_channel(int channel)
 void ShowPopupMessage(int messageId)
 {
     uint8_t packet[14] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, messageId, 0xFF, 0xFF, 0xFF, 0xFF };
-    VANInterface->set_channel_for_transmit_message(4, 0x52, 4, packet, 14, 0);
+    VANInterface->set_channel_for_transmit_message(4, 0x524, packet, 14, 0);
     VANInterface->disable_channel(4);
 }
 
 void SendExternalTemperature(int temperature)
 {
     uint8_t packet[7] = { 0x0F, 0x07, 0x00, 0x00, 0x00, 0x00, temperature * 2  + 0x50};
-    VANInterface->set_channel_for_transmit_message(4, 0x8a, 4, packet, 7, 0);
+    VANInterface->set_channel_for_transmit_message(4, 0x8A4, packet, 7, 0);
     VANInterface->disable_channel(4);
 }
 
 /* 
-    The message id 0x564 is asked by the multifunction display. If we remove the display from the car the message dissappears.
-    With the help of this method we can query the info from the BSI without having the display in the car.
+    The message id 0x564 is asked by the multifunction display. If we remove the display the message dissappears.
+    With the help of method we can query the info from the BSI without having the display in the car.
     We need to ask periodically.
 */
 void QueryCarStatusWithTripInfo()
 {
-    VANInterface->set_channel_for_reply_request_message(3, 0x56, 0x4, 29, 1);
+    VANInterface->set_channel_for_reply_request_message(3, 0x564, 29, 1);
 }
 
 /*
@@ -88,9 +88,9 @@ void AnswerToCDC()
     uint8_t trackNo = 0x17;
     uint8_t cdNo = 0x02;
     uint8_t trackCount = 0x21;
-
+   
     uint8_t packet[12] = { headerByte, 0x00, status, cartridge, minutes, seconds, trackNo, cdNo, trackCount, 0x3f, 0x01, headerByte };
-    VANInterface->set_channel_for_immediate_reply_message(3, 0x4E, 0xC, packet, 12);
+    VANInterface->set_channel_for_immediate_reply_message(3, 0x4EC, packet, 12);
 }
 
 void loop() {
