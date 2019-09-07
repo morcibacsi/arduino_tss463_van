@@ -1,5 +1,13 @@
 #include "tss463_van.h"
-#include <util/delay.h>
+#include <SPI.h>
+
+#ifdef __avr__
+    #include <util/delay.h>
+#endif
+
+#ifdef ARDUINO_ARCH_ESP32
+    #define _delay_ms(ms) delayMicroseconds((ms) * 1000)
+#endif
 
 int ExtractBits(const int value, const int numberOfBits, const int pos)
 {
@@ -172,9 +180,9 @@ uint8_t TSS463_VAN::spi_transfer(uint8_t data)
 {
     uint8_t res;
 
-    SPDR = data;
-    while (!(SPSR & (1 << SPIF))) {};
-    res = SPDR;
+    SPI->beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE3));
+    res = SPI->transfer(data);
+    SPI->endTransaction();
 
     return res;
 }
@@ -696,21 +704,12 @@ uint8_t TSS463_VAN::getlastChannel() {
 
 void TSS463_VAN::begin()
 {
-    //TIMSK0 = 0; //Disable Timer 0 interrupt - causes delay() to stop working
-    DDRB |= (1 << DDB3) | (1 << DDB5) | (1 << DDB2) | (1 << DDB1) | (1 << DDB0); // pin 3,5,2,1,0 as outputs rest left in their original state
-
-    PORTB |= (0 << PINB0);
-    PORTB |= (1 << PINB2);
-    SPCR = (1 << SPE) | (1 << MSTR) | (1 << CPOL) | (1 << CPHA);
-    byte clr = SPSR;
-    clr = SPDR;
-    (void)clr;
-
     _delay_ms(10);
     tss_init();
 }
 
-TSS463_VAN::TSS463_VAN(uint8_t _CS) {
+TSS463_VAN::TSS463_VAN(uint8_t _CS, SPIClass* _SPI) {
+    SPI = _SPI;
     SPICS = _CS;
     pinMode(SPICS, OUTPUT);
     TSS463_UNSELECT();

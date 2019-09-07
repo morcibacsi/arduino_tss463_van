@@ -1,3 +1,4 @@
+#include <SPI.h>
 #include "VanMessageSender.h"
 
 const int VAN_PIN = 7;
@@ -6,6 +7,7 @@ AbstractVanMessageSender *VANInterface;
 
 uint8_t vanMessageLength;
 uint8_t vanMessage[32];
+SPIClass* spi;
 
 uint8_t headerByte = 0x80;
 
@@ -13,11 +15,16 @@ char incomingByte;
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(230400);
 
     Serial.println("Arduino VAN bus monitor using TSS463C");
 
-    VANInterface = new VanMessageSender(VAN_PIN);
+    // initialize SPI
+    spi = new SPIClass();
+    spi->begin();
+
+    // instantiate the VanMessageSender class passing the CS pin and the SPI instance as a dependency
+    VANInterface = new VanMessageSender(VAN_PIN, spi);
     VANInterface->begin();
 
     // IMPORTANT - it does matter in which order the channels are set up for the various request types - need to investigate why

@@ -4,7 +4,8 @@
     #define _VanMessageSender_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
-    #include "Arduino.h"
+    #include <Arduino.h>
+    #include <SPI.h>
 #else
     #include "WProgram.h"
 #endif
@@ -17,9 +18,9 @@ class VanMessageSender : public AbstractVanMessageSender {
 TSS463_VAN *VAN;
 
   public:
-      VanMessageSender(uint8_t vanPin)
+      VanMessageSender(uint8_t vanPin, SPIClass *spi)
       {
-          VAN = new TSS463_VAN(vanPin);
+          VAN = new TSS463_VAN(vanPin, spi);
       }
 
       virtual void set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)

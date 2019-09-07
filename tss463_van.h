@@ -8,6 +8,7 @@
 #if defined(ARDUINO) && ARDUINO >= 100
     #include <Arduino.h>
     #include <inttypes.h>
+    #include <SPI.h>
 #else
     #include "WProgram.h"
 #endif
@@ -50,6 +51,7 @@ class TSS463_VAN
 {
 private:
     volatile int error = 0; // TSS463C out of sync error
+    SPIClass *SPI;
     uint8_t SPICS;
     void tss_init();
     void motorolla_mode();
@@ -61,7 +63,7 @@ private:
     void setup_channel(const uint8_t channelId, const uint8_t id1, const uint8_t id2, const uint8_t id2AndCommand, const uint8_t messagePointer, const uint8_t lengthAndStatus);
 public:
 
-    TSS463_VAN(uint8_t _CS);
+    TSS463_VAN(uint8_t _CS, SPIClass *_SPI);
     void set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t ack);
     void set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck);
     void set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength);
