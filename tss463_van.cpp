@@ -1,7 +1,7 @@
 #include "tss463_van.h"
 #include <SPI.h>
 
-#ifdef __avr__
+#ifdef ARDUINO_ARCH_AVR
     #include <util/delay.h>
 #endif
 

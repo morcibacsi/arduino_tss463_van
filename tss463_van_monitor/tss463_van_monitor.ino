@@ -21,7 +21,16 @@ void setup()
 
     // initialize SPI
     spi = new SPIClass();
-    spi->begin();
+
+    #ifdef ARDUINO_ARCH_AVR
+        // start spi on Arduino boards
+        spi->begin();
+    #endif
+
+    #ifdef ARDUINO_ARCH_ESP32
+        // You can select which pins to use as SPI on ESP32 boards by passing the SCK, MISO, MOSI, SS as arguments (in this order) to the spi->begin() method
+        spi->begin(12, 22, 23, VAN_PIN);
+    #endif
 
     // instantiate the VanMessageSender class passing the CS pin and the SPI instance as a dependency
     VANInterface = new VanMessageSender(VAN_PIN, spi);
@@ -107,11 +116,13 @@ void loop() {
         switch (inChar)
         {
             case 'd': {
+                // note that the display remembers which message was shown last
+                // so if you send the same messageId multiple times, it will be displayed only for the first time
                 ShowPopupMessage(0x09);
                 break;
             }
             case 'f': {
-                ShowPopupMessage(0X5F);
+                ShowPopupMessage(0X18);
                 break;
             }
             case 't': {

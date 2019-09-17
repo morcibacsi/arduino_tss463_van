@@ -1,4 +1,3 @@
-
 # Arduino TSS463C VAN interface library
 
 This is an Arduino library for the Atmel TSS463C VAN Datalink Controller with SPI.
@@ -26,14 +25,19 @@ Copy the following files to your **documents\Arduino\libraries\tss463_van** fold
   - tss463_van.h
   - tss463_van.cpp
   - keywords.txt
+  - library.properties
 
 Check the **tss463_van_monitor** folder for examples on how to read and write messages on the bus.
 
-## See also
+### Tested boards
+- Arduino UNO/Nano/Pro Mini
+- ESP32
+
+### See also
 - [VAN Analyzer for Saleae Logic Analyzer][van_analyzer]
 - [VAN bus reader library for ESP32][esp32_van_reader]
 
-## Thanks
+### Thanks
 I would like to thank [lazarov-g][lazarov-g] without his help and [sketch][lazarov_reader] this library would never exists.
 
 [van_bus]: https://en.wikipedia.org/wiki/Vehicle_Area_Network
