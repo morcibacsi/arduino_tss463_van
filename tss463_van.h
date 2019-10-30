@@ -25,7 +25,6 @@
 #define ROKE  (1)
 #define RNOKE (0)
 
-
 #pragma region TSS463C internal register adresses - Figure 22
                                  // R/W?  - Default value on init
                                  //------------------------------
@@ -47,9 +46,22 @@
 // Mailbox - data register
 #define GETMAIL(x) (0x80 + x)
 
+typedef struct ChannelSetup {
+    uint8_t MessageLengthAndStatusRegisterValue;
+    uint8_t MemoryLocation;
+    uint16_t Identifier;
+    bool IsOccupied;
+};
+
 class TSS463_VAN
 {
 private:
+    const uint8_t NOT_ENOUGH_MEMORY_FOR_DATA = 0XFF;
+    const uint8_t TSS463C_RAM_SIZE_IN_BYTES = 128;
+
+    ChannelSetup channels[14];
+    uint8_t next_free_memory_address;
+
     volatile int error = 0; // TSS463C out of sync error
     SPIClass *SPI;
     uint8_t SPICS;
@@ -58,23 +70,27 @@ private:
     uint8_t spi_transfer(volatile uint8_t data);
     void register_set(uint8_t address, uint8_t value);
     uint8_t register_get(uint8_t address);
-    uint8_t registers_get(const uint8_t address, volatile uint8_t values[], const uint8_t count);
-    void registers_set(const uint8_t address, const uint8_t values[], const uint8_t n);
-    void setup_channel(const uint8_t channelId, const uint8_t id1, const uint8_t id2, const uint8_t id2AndCommand, const uint8_t messagePointer, const uint8_t lengthAndStatus);
+    uint8_t registers_get(uint8_t address, volatile uint8_t values[], uint8_t count);
+    void registers_set(uint8_t address, const uint8_t values[], uint8_t n);
+    void setup_channel(uint8_t channelId, uint16_t identifier, uint8_t id1, uint8_t id2, uint8_t id2AndCommand, uint8_t messagePointer, uint8_t lengthAndStatus);
+    void disable_channel(uint8_t channelId);
+    uint8_t get_memory_address_to_use(uint8_t channelId, uint8_t messageLength);
+    bool is_valid_channel(uint8_t channelId, uint16_t identifier);
 public:
 
     TSS463_VAN(uint8_t _CS, SPIClass *_SPI);
-    void set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t ack);
-    void set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck);
-    void set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength);
-    void set_channel_for_reply_request_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t requireAck);
-    void set_channel_for_immediate_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength);
-    void set_channel_for_deferred_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t setAck);
-    void set_channel_for_reply_request_detection_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength);
-    void disable_channel(const uint8_t channelId);
+    bool set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t ack);
+    bool set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck);
+    bool set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength);
+    bool set_channel_for_reply_request_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t requireAck);
+    bool set_channel_for_immediate_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength);
+    bool set_channel_for_deferred_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t setAck);
+    bool set_channel_for_reply_request_detection_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength);
+    bool reactivate_channel(uint8_t channelId);
+    void reset_channels();
     MessageLengthAndStatusRegister message_available(uint8_t channelId);
-    uint8_t readMsgBuf(const uint8_t channelId, uint8_t*len, uint8_t buf[]);
-    uint8_t getlastChannel();
+    void read_message(uint8_t channelId, uint8_t*length, uint8_t buffer[]);
+    uint8_t get_last_channel();
     void begin();
 };
 

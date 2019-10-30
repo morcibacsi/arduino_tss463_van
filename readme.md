@@ -4,12 +4,14 @@ This is an Arduino library for the Atmel TSS463C VAN Datalink Controller with SP
 
 [VAN bus][van_bus] is pretty similar to CAN bus. It was used in many cars (Peugeot, Citroen) made by PSA.
 
-This library is unfinished, so contributions are very welcome. It is capable of reading and writing the VAN bus. To understand the VAN protocol and the library I **strongly recommend** to read the datasheet of the TSS463C VAN Datalink Controller. It is included in the repository. The library contains references to the pages of the document to have a better understanding on what is going on.
+It is capable of reading and writing the VAN bus. To understand the VAN protocol and the library I **strongly recommend** to read the datasheet of the TSS463C VAN Datalink Controller. It is included in the repository. The library contains references to the pages of the document to have a better understanding on what is going on.
 
 ### Message types
 Understanding the various message types is essential (see page 19-21 and 42-45 in the datasheet). Some messages are pretty straightforward: they have a source and destination(s), but there are others which are like queries: a device (for example the display) asks another one (like the BSI or the CD changer or the head unit) for some data. So when you are testing and a message does not appear it could mean that you don't have the initiator in your setup (or maybe you are missing the device which should answer for the query). Or it could also mean that you misconfigured the receiver channels.
 
-If you just want to have a working VAN bus reader and don't want to have your hands dirty I recommend my [VAN bus reader library for ESP32][esp32_van_reader] as it is faster and requires less (and more easy to obtain) hardware (and it also captures those messages which does not have the response part in a query-like message). But for now that library only has reading capabilities.
+Because of the various message types and the way the TSS463 works, configuring the channels properly is very important. You can easily miss messages if you don't pay attention to the message types and the channel configuration.
+
+So if you just want to have a working VAN bus reader and don't want to have your hands dirty I recommend my [VAN bus reader library for ESP32][esp32_van_reader] as it just dumps everything from the bus regardless of the message types and states. And also that requires less (and more easy to obtain) hardware parts. But that library only has reading capabilities compared to this one which also can transmit messages on the bus safely.
 
 ### Schematics
 
@@ -27,7 +29,7 @@ Copy the following files to your **documents\Arduino\libraries\tss463_van** fold
   - keywords.txt
   - library.properties
 
-Check the **tss463_van_monitor** folder for examples on how to read and write messages on the bus.
+Check the **tss463_van_monitor** and **tss463_van_dashboard_experiment** folders for examples on how to read and write messages on the bus.
 
 ### Tested boards
 - Arduino UNO/Nano/Pro Mini

@@ -16,7 +16,6 @@ char incomingByte;
 void setup()
 {
     Serial.begin(230400);
-
     Serial.println("Arduino VAN bus monitor using TSS463C");
 
     // initialize SPI
@@ -29,14 +28,17 @@ void setup()
 
     #ifdef ARDUINO_ARCH_ESP32
         // You can select which pins to use as SPI on ESP32 boards by passing the SCK, MISO, MOSI, SS as arguments (in this order) to the spi->begin() method
-        spi->begin(12, 22, 23, VAN_PIN);
+        //spi->begin(12, 22, 23, VAN_PIN);
+        spi->begin(13, 5, 12, VAN_PIN);
     #endif
 
     // instantiate the VanMessageSender class passing the CS pin and the SPI instance as a dependency
     VANInterface = new VanMessageSender(VAN_PIN, spi);
     VANInterface->begin();
 
-    // IMPORTANT - it does matter in which order the channels are set up for the various request types - need to investigate why
+    // IMPORTANT - it does matter in which order the channels are set up for the various request types
+    // This is because how priority among different channels is taken into consideration (see Page 46 in documentation for further info)
+
     van_setup_channel(0); //#1 reply request message
     van_setup_channel(1); //#2 receive message
     van_setup_channel(2); //#3 reply request without transmission message
@@ -67,29 +69,27 @@ void van_setup_channel(int channel)
 void ShowPopupMessage(int messageId)
 {
     uint8_t packet[14] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, messageId, 0xFF, 0xFF, 0xFF, 0xFF };
-    VANInterface->set_channel_for_transmit_message(4, 0x524, packet, 14, 0);
-    VANInterface->disable_channel(4);
+    VANInterface->set_channel_for_transmit_message(5, 0x524, packet, 14, 0);
 }
 
 void SendExternalTemperature(int temperature)
 {
     uint8_t packet[7] = { 0x0F, 0x07, 0x00, 0x00, 0x00, 0x00, temperature * 2  + 0x50};
-    VANInterface->set_channel_for_transmit_message(4, 0x8A4, packet, 7, 0);
-    VANInterface->disable_channel(4);
+    VANInterface->set_channel_for_transmit_message(6, 0x8A4, packet, 7, 0);
 }
 
-/* 
+/*
     The message id 0x564 is asked by the multifunction display. If we remove the display the message dissappears.
     With the help of method we can query the info from the BSI without having the display in the car.
     We need to ask periodically.
 */
 void QueryCarStatusWithTripInfo()
 {
-    VANInterface->set_channel_for_reply_request_message(3, 0x564, 29, 1);
+    VANInterface->set_channel_for_reply_request_message(7, 0x564, 29, 1);
 }
 
 /*
-    The display asks for the presence of the CD changer. 
+    The display asks for the presence of the CD changer.
     With the help of this method we can fool the display that there is a CD changer installed.
     We need to set this periodically.
 */
@@ -104,9 +104,9 @@ void AnswerToCDC()
     uint8_t trackNo = 0x17;
     uint8_t cdNo = 0x02;
     uint8_t trackCount = 0x21;
-   
+
     uint8_t packet[12] = { headerByte, 0x00, status, cartridge, minutes, seconds, trackNo, cdNo, trackCount, 0x3f, 0x01, headerByte };
-    VANInterface->set_channel_for_immediate_reply_message(3, 0x4EC, packet, 12);
+    VANInterface->set_channel_for_immediate_reply_message(8, 0x4EC, packet, 12);
 }
 
 void loop() {
@@ -146,7 +146,7 @@ void loop() {
         MessageLengthAndStatusRegister messageAvailable = VANInterface->message_available(channel);
         if (messageAvailable.data.CHRx || messageAvailable.data.CHTx /*|| messageAvailable.data.CHER*/)
         {
-            VANInterface->readMsgBuf(channel, &vanMessageLength, vanMessage);
+            VANInterface->read_message(channel, &vanMessageLength, vanMessage);
 
             if (vanMessage[0] == 0x00)
             {
@@ -167,7 +167,7 @@ void loop() {
             }
             Serial.println();
 
-            van_setup_channel(channel);
+            VANInterface->reactivate_channel(channel);
         }
     }
 }

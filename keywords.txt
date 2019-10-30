@@ -19,11 +19,12 @@ set_channel_for_reply_request_message	KEYWORD2
 set_channel_for_immediate_reply_message	KEYWORD2
 set_channel_for_deferred_reply_message	KEYWORD2
 set_channel_for_reply_request_detection_message	KEYWORD2
-disable_channel	KEYWORD2
 message_available	KEYWORD2
-readMsgBuf	KEYWORD2
-getlastChannel	KEYWORD2
+read_message	KEYWORD2
+get_last_channel	KEYWORD2
+reactivate_channel	KEYWORD2
 begin	KEYWORD2
+reset_channels	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

@@ -9,7 +9,7 @@
     #define _delay_ms(ms) delayMicroseconds((ms) * 1000)
 #endif
 
-int ExtractBits(const int value, const int numberOfBits, const int pos)
+int ExtractBits(uint16_t value, uint16_t numberOfBits, uint16_t pos)
 {
     return (((1 << numberOfBits) - 1) & (value >> (pos - 1)));
 }
@@ -25,11 +25,7 @@ void TSS463_VAN::tss_init()
     motorolla_mode();
     _delay_ms(10);
 
-    // disable all channels
-    for (uint8_t i = 0; i < CHANNELS; i++) {
-        disable_channel(i);
-        _delay_ms(10);
-    }
+    reset_channels();
 
     #pragma region Line Control Register (0x00) documentation
     /*
@@ -52,7 +48,9 @@ void TSS463_VAN::tss_init()
     */  
     #pragma endregion
 
-    register_set(LINECONTROL, 0x20); // Clock Divider 0010 - 0x02 ( TSCLK = XTAL1 / n * 16) or ( TSCLK = 16000000 / 2 * 16) or 500000
+    // Clock Divider 0010 - 0x02 ( TSCLK = XTAL1 / n * 16) or ( TSCLK = 16000000 / 2 * 16) or 500000
+    //register_set(LINECONTROL, 0x30); // 62.5 kbit/sec - VAN body
+    register_set(LINECONTROL, 0x20); // 125 kbit/sec - VAN comfort
     _delay_ms(10);
 
     #pragma region Transmit Control Register (0x01) documentation
@@ -161,7 +159,7 @@ void TSS463_VAN::tss_init()
     REAR: Re-Arbitrate command. This command will, after the current attempt, reset the retry counter and re-arbitrate the messages to be transmitted in order to find the highest priority message to transmit.
         One: Re-arbitrate active
         Zero: Re-arbitrate inactive
-    MSDC: Manual System Diagnosis Clock. Rather than using the SDC divider described in Section “SDC Signal (Synchronous Diagnosis Clock)” , the user can use the manual SDC command to generate a SDC pulse for the diagnosis system. This MSDC pulse should be high at least 2 timeslot clocks.      
+    MSDC: Manual System Diagnosis Clock. Rather than using the SDC divider described in Section “SDC Signal (Synchronous Diagnosis Clock)” , the user can use the manual SDC command to generate a SDC pulse for the diagnosis system. This MSDC pulse should be high at least 2 timeslot clocks.
     */
     #pragma endregion
 
@@ -170,9 +168,9 @@ void TSS463_VAN::tss_init()
     error = 0;
 
     #pragma region Fill Message DATA RAM area with 0x00
-    uint8_t zeroarray[128];
+    uint8_t zeroarray[TSS463C_RAM_SIZE_IN_BYTES];
     memset(zeroarray, 0, sizeof(zeroarray));
-    registers_set(GETMAIL(0), zeroarray, 128);
+    registers_set(GETMAIL(0), zeroarray, TSS463C_RAM_SIZE_IN_BYTES);
     #pragma endregion
 }
 
@@ -210,7 +208,7 @@ void TSS463_VAN::register_set(uint8_t address, uint8_t value)
     TSS463_UNSELECT();
 }
 
-void TSS463_VAN::registers_set(const uint8_t address, const uint8_t values[], const uint8_t count)
+void TSS463_VAN::registers_set(uint8_t address, const uint8_t values[], uint8_t count)
 {
     uint8_t i;
     uint8_t res = 0;
@@ -264,7 +262,7 @@ uint8_t TSS463_VAN::register_get(uint8_t address)
     return value;
 }
 
-uint8_t TSS463_VAN::registers_get(const uint8_t address, volatile uint8_t values[], const uint8_t count)
+uint8_t TSS463_VAN::registers_get(uint8_t address, volatile uint8_t values[], uint8_t count)
 {
     uint8_t value;
 
@@ -314,7 +312,7 @@ void TSS463_VAN::motorolla_mode()
     TSS463_UNSELECT();
 }
 
-void TSS463_VAN::disable_channel(const uint8_t channelId)
+void TSS463_VAN::disable_channel(uint8_t channelId)
 {
     register_set(CHANNEL_ADDR(channelId) + 0, 0x00);  //  ID_TAG 9C4 - Radio Control
     register_set(CHANNEL_ADDR(channelId) + 1, 0x00);  //  ID_TAG, RNW = 0, RTR = 1
@@ -322,9 +320,10 @@ void TSS463_VAN::disable_channel(const uint8_t channelId)
     register_set(CHANNEL_ADDR(channelId) + 3, 0x0F);  //  M_L [4:0] = 0x1F Frame with 30 DATA bytes , CHER = 0, CHTx = 0, CHRx = 0
     register_set(CHANNEL_ADDR(channelId) + 6, 0x00);  //  ID_MASK 9C4
     register_set(CHANNEL_ADDR(channelId) + 7, 0x00);  //  ID_MASK
+    channels[channelId].IsOccupied = false;
 }
 
-void TSS463_VAN::setup_channel(const uint8_t channelId, const uint8_t id1, const uint8_t id2, const uint8_t id2AndCommand, const uint8_t messagePointer, const uint8_t lengthAndStatus)
+void TSS463_VAN::setup_channel(uint8_t channelId, uint16_t identifier, uint8_t id1, uint8_t id2, uint8_t id2AndCommand, uint8_t messagePointer, uint8_t lengthAndStatus)
 {
     /*
     :...............:........:.......:.......:.......:.......:.......:.......:.......:.......:
@@ -353,6 +352,75 @@ void TSS463_VAN::setup_channel(const uint8_t channelId, const uint8_t id1, const
     register_set(CHANNEL_ADDR(channelId) + 3, lengthAndStatus); //  M_L [4:0] = 0x1F Frame with 30 DATA bytes , CHER = 0, CHTx = 0, CHRx = 0
     register_set(CHANNEL_ADDR(channelId) + 6, id1);             //  ID_MASK 9C4
     register_set(CHANNEL_ADDR(channelId) + 7, id2);             //  ID_MASK
+
+    channels[channelId].MessageLengthAndStatusRegisterValue = lengthAndStatus;
+    channels[channelId].IsOccupied = true;
+    channels[channelId].Identifier = identifier;
+}
+
+/*
+    Gets the next memory address which is available
+*/
+uint8_t TSS463_VAN::get_memory_address_to_use(uint8_t channelId, uint8_t messageLength)
+{
+    if (channels[channelId].IsOccupied)
+    {
+        return channels[channelId].MemoryLocation;
+    }
+
+    uint8_t result = next_free_memory_address;
+    if (next_free_memory_address + messageLength <= TSS463C_RAM_SIZE_IN_BYTES - 1)
+    {
+        channels[channelId].MemoryLocation = next_free_memory_address;
+        next_free_memory_address = next_free_memory_address + messageLength;
+
+        return result;
+    }
+    return NOT_ENOUGH_MEMORY_FOR_DATA;
+}
+
+/*
+    Checks whether a channel exists and available
+*/
+bool TSS463_VAN::is_valid_channel(uint8_t channelId, uint16_t identifier)
+{
+    if (channelId >= CHANNELS)
+    {
+        return false;
+    }
+
+    if ((channels[channelId].IsOccupied == false) ||
+        (channels[channelId].IsOccupied && channels[channelId].Identifier == identifier))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+/*
+    Resets all channels to their initial states
+*/
+void TSS463_VAN::reset_channels()
+{
+    for (uint8_t i = 0; i < CHANNELS; i++) {
+        disable_channel(i);
+        _delay_ms(10);
+    }
+    next_free_memory_address = 0;
+}
+
+/*
+    Activates a channel which was previously set by one of the set_channel_ prefixed methods
+*/
+bool TSS463_VAN::reactivate_channel(uint8_t channelId)
+{
+    if (channels[channelId].IsOccupied)
+    {
+        register_set(CHANNEL_ADDR(channelId) + 3, channels[channelId].MessageLengthAndStatusRegisterValue);
+        return true;
+    }
+    return false;
 }
 
 /*
@@ -360,13 +428,18 @@ void TSS463_VAN::setup_channel(const uint8_t channelId, const uint8_t id1, const
 ......................................................
 :                    : RNW : RTR : CHTx :    CHRx    :
 :....................:.....:.....:......:............:
-: Initial setup      :   0 :   1 :    0 : Don't care :
+: Initial setup      :   0 :   0 :    0 : Don't care :
 : After transmission :   0 :   0 :    1 : Unchanged  :
 :....................:.....:.....:......:............:
 */
 //Page 44 contains how the RNW, RTR, CHTx, CHRx registers should be configured to send a message on a channel
-void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)
+bool TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t requireAck)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -380,22 +453,31 @@ void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint16_t id
     id2Command.data.EXT = 1;
     id2Command.data.RAK = requireAck;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 0;
-    messagePointer.data.M_P = 127-(messageLength+1); //TODO hardcoded memory location for sending messages !!!
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHTx = 0;
-    lengthAndStatus.data.M_L  = messageLength+1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = 0;
+        messagePointer.data.M_P = memory_address;
 
-    uint8_t addressOfDataToSendOnVAN = GETMAIL(messagePointer.data.M_P+1);
-    registers_set(addressOfDataToSendOnVAN, values, messageLength);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHTx = 0;
+        lengthAndStatus.data.M_L = messageLength + 1;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        uint8_t addressOfDataToSendOnVAN = GETMAIL(messagePointer.data.M_P + 1);
+        registers_set(addressOfDataToSendOnVAN, values, messageLength);
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
 /*
@@ -407,8 +489,13 @@ void TSS463_VAN::set_channel_for_transmit_message(uint8_t channelId, uint16_t id
 : After transmission :   0 :   1 : Unchanged  :    1 :
 :....................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck)
+bool TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -422,20 +509,29 @@ void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint16_t ide
     id2Command.data.EXT = 1;
     id2Command.data.RAK = 0;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = (setAck == 1) ? 0 : 1;
-    messagePointer.data.M_P = channelId*30;
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHRx = 0;
-    lengthAndStatus.data.CHTx = 0;
-    lengthAndStatus.data.M_L  = messageLength+1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = (setAck == 1) ? 0 : 1;
+        messagePointer.data.M_P = memory_address;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHRx = 0;
+        lengthAndStatus.data.CHTx = 0;
+        lengthAndStatus.data.M_L = messageLength + 1;
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
 /*
@@ -447,8 +543,13 @@ void TSS463_VAN::set_channel_for_receive_message(uint8_t channelId, uint16_t ide
 : After transmission :   1 :   1 : Unchanged  :    1 :
 :....................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
+bool TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -462,20 +563,29 @@ void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint
     id2Command.data.EXT = 1;//should be 1
     id2Command.data.RAK = 0;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 1;
-    messagePointer.data.M_P = channelId*30;
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHRx = 0;
-    lengthAndStatus.data.CHTx = 0;
-    lengthAndStatus.data.M_L  = messageLength+1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = 1;
+        messagePointer.data.M_P = memory_address;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHRx = 0;
+        lengthAndStatus.data.CHTx = 0;
+        lengthAndStatus.data.M_L = messageLength + 1;
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
 /*
@@ -488,8 +598,13 @@ void TSS463_VAN::set_channel_for_reply_request_message_without_transmission(uint
 : After reception(of reply)           :   1 :   1 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t requireAck)
+bool TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t requireAck)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -503,20 +618,29 @@ void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint16
     id2Command.data.EXT = 1;
     id2Command.data.RAK = requireAck;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 1;
-    messagePointer.data.M_P = channelId * 30;
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHRx = 0;
-    lengthAndStatus.data.CHTx = 0;
-    lengthAndStatus.data.M_L = messageLength + 1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = 1;
+        messagePointer.data.M_P = memory_address;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHRx = 0;
+        lengthAndStatus.data.CHTx = 0;
+        lengthAndStatus.data.M_L = messageLength + 1;
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
 /*
@@ -528,8 +652,13 @@ void TSS463_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint16
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength)
+bool TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -543,23 +672,32 @@ void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint
     id2Command.data.EXT = 1;
     id2Command.data.RAK = 0;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 0;
-    messagePointer.data.M_P = channelId * 30;
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHRx = 0;
-    lengthAndStatus.data.CHTx = 0;
-    lengthAndStatus.data.M_L = messageLength + 1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = 0;
+        messagePointer.data.M_P = memory_address;
 
-    uint8_t addressOfDataToSendOnVAN = GETMAIL(messagePointer.data.M_P + 1);
-    registers_set(addressOfDataToSendOnVAN, values, messageLength);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHRx = 0;
+        lengthAndStatus.data.CHTx = 0;
+        lengthAndStatus.data.M_L = messageLength + 1;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        uint8_t addressOfDataToSendOnVAN = GETMAIL(messagePointer.data.M_P + 1);
+        registers_set(addressOfDataToSendOnVAN, values, messageLength);
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
 /*
@@ -571,8 +709,13 @@ void TSS463_VAN::set_channel_for_immediate_reply_message(uint8_t channelId, uint
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
+bool TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t setAck)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -586,23 +729,32 @@ void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint1
     id2Command.data.EXT = 1;
     id2Command.data.RAK = 0;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = (setAck == 1) ? 0 : 1;
-    messagePointer.data.M_P = channelId * 30;
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHRx = 1;
-    lengthAndStatus.data.CHTx = 0;
-    lengthAndStatus.data.M_L = messageLength + 1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = (setAck == 1) ? 0 : 1;
+        messagePointer.data.M_P = memory_address;
 
-    uint8_t addressOfDataToSendOnVAN = GETMAIL(messagePointer.data.M_P + 1);
-    registers_set(addressOfDataToSendOnVAN, values, messageLength);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHRx = 1;
+        lengthAndStatus.data.CHTx = 0;
+        lengthAndStatus.data.M_L = messageLength + 1;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        uint8_t addressOfDataToSendOnVAN = GETMAIL(messagePointer.data.M_P + 1);
+        registers_set(addressOfDataToSendOnVAN, values, messageLength);
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
 /*
@@ -614,8 +766,13 @@ void TSS463_VAN::set_channel_for_deferred_reply_message(uint8_t channelId, uint1
 : After transmission                  :   1 :   0 : 1          :    1 :
 :.....................................:.....:.....:......:............:
 */
-void TSS463_VAN::set_channel_for_reply_request_detection_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
+bool TSS463_VAN::set_channel_for_reply_request_detection_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength)
 {
+    if (!is_valid_channel(channelId, identifier))
+    {
+        return false;
+    }
+
     uint8_t id1;
     uint8_t id2;
     GetBytesFromIdentifier(identifier, &id1, &id2);
@@ -629,22 +786,34 @@ void TSS463_VAN::set_channel_for_reply_request_detection_message(uint8_t channel
     id2Command.data.EXT = 1;
     id2Command.data.RAK = 0;
 
-    //Page38
-    MessagePointerRegister messagePointer;
-    memset(&messagePointer, 0, sizeof(messagePointer));
-    messagePointer.data.DRAK = 1;
-    messagePointer.data.M_P = channelId * 30;
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
 
-    //Page 39
-    MessageLengthAndStatusRegister lengthAndStatus;
-    memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
-    lengthAndStatus.data.CHRx = 0;
-    lengthAndStatus.data.CHTx = 1;
-    lengthAndStatus.data.M_L = messageLength + 1;
+    if (memory_address != NOT_ENOUGH_MEMORY_FOR_DATA)
+    {
+        //Page38
+        MessagePointerRegister messagePointer;
+        memset(&messagePointer, 0, sizeof(messagePointer));
+        messagePointer.data.DRAK = 1;
+        messagePointer.data.M_P = memory_address;
 
-    setup_channel(channelId, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+        //Page 39
+        MessageLengthAndStatusRegister lengthAndStatus;
+        memset(&lengthAndStatus, 0, sizeof(lengthAndStatus));
+        lengthAndStatus.data.CHRx = 0;
+        lengthAndStatus.data.CHTx = 1;
+        lengthAndStatus.data.M_L = messageLength + 1;
+
+        setup_channel(channelId, identifier, id1, id2, id2Command.Value, messagePointer.Value, lengthAndStatus.Value);
+
+        return true;
+    }
+
+    return false;
 }
 
+/*
+    Checks if a message is available in a channel
+*/
 MessageLengthAndStatusRegister TSS463_VAN::message_available(uint8_t channelId)
 {
     MessageLengthAndStatusRegister lengthAndStatus;
@@ -654,7 +823,10 @@ MessageLengthAndStatusRegister TSS463_VAN::message_available(uint8_t channelId)
     return lengthAndStatus;
 }
 
-uint8_t TSS463_VAN::readMsgBuf(const uint8_t channelId, uint8_t*len, uint8_t buf[])
+/*
+    Reads a message from a channel
+*/
+void TSS463_VAN::read_message(uint8_t channelId, uint8_t*length, uint8_t buffer[])
 {
     uint8_t id1 = register_get(CHANNEL_ADDR(channelId) + 0);
     uint8_t id2 = register_get(CHANNEL_ADDR(channelId) + 1);
@@ -682,26 +854,32 @@ uint8_t TSS463_VAN::readMsgBuf(const uint8_t channelId, uint8_t*len, uint8_t buf
 
     uint8_t d = registers_get(addr, currentData, messageLength);
 
-    buf[0] = id1;
-    buf[1] = id2;
-    //buf[2] = messageStatusByte; //include message status byte in array
+    buffer[0] = id1;
+    buffer[1] = id2;
+    //buffer[2] = messageStatusByte; //include message status byte in array
 
     for (uint8_t i = 0; i < messageLength; i++)
     {
-        buf[i + 2] = currentData[i];
-        //buf[i+3] = currentData[i]; //include message status byte in array
+        buffer[i + 2] = currentData[i];
+        //buffer[i+3] = currentData[i]; //include message status byte in array
     }
 
-    //*len = messageLength + 3; //include message status byte in array
-    *len = messageLength + 2;
+    //*length = messageLength + 3; //include message status byte in array
+    *length = messageLength + 2;
 }
 
-uint8_t TSS463_VAN::getlastChannel() {
+/*
+    Returns the channel which transferred or received a message last time
+*/
+uint8_t TSS463_VAN::get_last_channel() {
     uint8_t lms = register_get(LASTMESSAGESTATUS);
     uint8_t channelId = ExtractBits(lms, 3, 1);
     return channelId;
 }
 
+/*
+    Starts the library
+*/
 void TSS463_VAN::begin()
 {
     _delay_ms(10);
