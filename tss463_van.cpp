@@ -220,7 +220,7 @@ void TSS463_VAN::registers_set(uint8_t address, const uint8_t values[], uint8_t 
     res = spi_transfer(address);
     if ( res != ADDR_ANSW)
     error++;
-    _delay_ms( 8);
+    _delay_ms(8);
     //The next byte transmitted is the control byte that determines the direction of the communication
     res = spi_transfer(WRITE);
     if (res != CMD_ANSW)
@@ -850,7 +850,8 @@ void TSS463_VAN::read_message(uint8_t channelId, uint8_t*length, uint8_t buffer[
     uint8_t command = ExtractBits(messageStatusByte, 3, 6);
 
     uint8_t currentData[messageLength];
-    uint8_t addr = GETMAIL(channelId * 30 + 1);
+    uint8_t memory_address = get_memory_address_to_use(channelId, messageLength);
+    uint8_t addr = GETMAIL(memory_address + 1);
 
     uint8_t d = registers_get(addr, currentData, messageLength);
 
