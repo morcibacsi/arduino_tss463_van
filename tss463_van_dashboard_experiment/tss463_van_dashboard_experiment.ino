@@ -6,16 +6,20 @@
 #include <SPI.h>
 #include "VanMessageSender.h"
 
-const int VAN_PIN = 7;
+const int SCK_PIN = 25;
+const int MISO_PIN = 5;
+const int MOSI_PIN = 33;
+//const int VAN_CS_PIN = 32; //ESP32
+const int VAN_CS_PIN = 7; //Pro Mini
 
-AbstractVanMessageSender *VANInterface;
+AbstractVanMessageSender* VANInterface;
 unsigned long currentTime = millis();
 unsigned long previousTime = millis();
 
 //uint8_t dashboard_packet[14] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 uint8_t dashboard_packet[14] = { 0x8C, 0x00, 0x02, 0xB9, 0x00, 0x82, 0x8D, 0x4E, 0x59, 0x00, 0xFE, 0x01, 0x00, 0x00 };
 
-SPIClass *spi;
+SPIClass* spi;
 
 /* For dashboards made before 2004 */
 void Send4FC_V1(uint8_t channelId)
@@ -61,9 +65,9 @@ void Send524(uint8_t channelId)
     VANInterface->set_channel_for_transmit_message(channelId, 0x524, packet, 16, 0);
 }
 
-void setup(){
+void setup() {
     Serial.begin(230400);
-    Serial.println("ESP32 TSS463");
+    Serial.println("TSS463 dashboard experiment");
     spi = new SPIClass();
 
     /*
@@ -73,17 +77,15 @@ void setup(){
      *  ESP32      12        22           23        13
      */
 
-    #ifdef ARDUINO_ARCH_AVR
-        spi->begin();
-    #endif
+#ifdef ARDUINO_ARCH_AVR
+    spi->begin();
+#endif
 
-    #ifdef ARDUINO_ARCH_ESP32
-        //spi->begin(12, 22, 23, VAN_PIN);
-        //spi->begin(13, 5, 12, VAN_PIN);
-        spi->begin(13, 18, 26, VAN_PIN);
-    #endif
+#ifdef ARDUINO_ARCH_ESP32
+    spi->begin(SCK_PIN, MISO_PIN, MOSI_PIN, VAN_CS_PIN);
+#endif
 
-    VANInterface = new VanMessageSender(VAN_PIN, spi);
+    VANInterface = new VanMessageSender(VAN_CS_PIN, spi);
     VANInterface->begin();
 
     //Send4FC_V1(0);
@@ -117,7 +119,7 @@ void loop() {
         VANInterface->reactivate_channel(5);
     }
 
-    if (Serial.available()>0)
+    if (Serial.available() > 0)
     {
         int inChar = Serial.read();
         //Serial.println(inChar);
@@ -149,6 +151,18 @@ void loop() {
                 {
                     dashboard_packet[i]--;
                 }
+                break;
+            }
+            case 'r':
+            {
+                VANInterface->set_value_in_channel(1, 0, 0x18);
+                VANInterface->set_value_in_channel(1, 1, 0xF8);
+                break;
+            }
+            case 'R':
+            {
+                VANInterface->set_value_in_channel(1, 0, 0x4F);
+                VANInterface->set_value_in_channel(1, 1, 0x9D);
                 break;
             }
         }
