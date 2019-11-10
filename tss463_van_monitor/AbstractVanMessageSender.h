@@ -87,6 +87,12 @@ public:
 
     /// <summary> Resets all channels to their initial states </summary>
     virtual void reset_channels() = 0;
+
+    /// <summary> Sets an individual byte inside an already active channel. If we have a long message it is much faster to send only the changed byte instad of the full packet </summary>
+    /// <param name="channelId"> Channel identifier (0-14) </param>
+    /// <param name="index0"> Zero based index of data to be set </param>
+    /// <param name="value"> Value to be set </param>
+    virtual void set_value_in_channel(uint8_t channelId, uint8_t index0, uint8_t value) = 0;
 };
 
 #endif

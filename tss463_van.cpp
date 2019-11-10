@@ -879,6 +879,17 @@ uint8_t TSS463_VAN::get_last_channel() {
 }
 
 /*
+    Sets an individual byte in an already defined channel
+*/
+void TSS463_VAN::set_value_in_channel(uint8_t channelId, uint8_t index0, uint8_t value)
+{
+    uint8_t memory_address = get_memory_address_to_use(channelId, 1);
+    uint8_t addressOfDataToSendOnVAN = GETMAIL(memory_address+1+index0);
+    uint8_t packet[] = { value };
+    registers_set(addressOfDataToSendOnVAN, packet, 1);
+}
+
+/*
     Starts the library
 */
 void TSS463_VAN::begin()

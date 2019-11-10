@@ -93,6 +93,11 @@ public:
     {
         VAN->reset_channels();
     }
+
+    void set_value_in_channel(uint8_t channelId, uint8_t index0, uint8_t value) override
+    {
+        VAN->set_value_in_channel(channelId, index0, value);
+    }
 };
 
 #endif

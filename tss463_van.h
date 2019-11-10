@@ -91,6 +91,7 @@ public:
     MessageLengthAndStatusRegister message_available(uint8_t channelId);
     void read_message(uint8_t channelId, uint8_t*length, uint8_t buffer[]);
     uint8_t get_last_channel();
+    void set_value_in_channel(uint8_t channelId, uint8_t index0, uint8_t value);
     void begin();
 };
 
