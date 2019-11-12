@@ -11,16 +11,23 @@ Understanding the various message types is essential (see page 19-21 and 42-45 i
 
 Because of the various message types and the way the TSS463 works, configuring the channels properly is very important. You can easily miss messages if you don't pay attention to the message types and the channel configuration.
 
-So if you just want to have a working VAN bus reader and don't want to have your hands dirty I recommend my [VAN bus reader library for ESP32][esp32_van_reader] as it just dumps everything from the bus regardless of the message types and states. And also that requires less (and more easy to obtain) hardware parts. But that library only has reading capabilities compared to this one which also can transmit messages on the bus safely.
+So if you just want to have a working VAN bus reader and don't want to have your hands dirty I recommend my [VAN bus reader library for ESP32][esp32_van_reader] as it just dumps everything from the bus regardless of the message types and states. And also that requires less (and more easy to obtain) hardware parts. But that library has reading capabilities only compared to this one which also can transmit messages on the bus safely.
 
 ### Schematics
 
 To have the library working, you need to build a shield first as such thing does not exists on the market for the VAN bus. To build the hardware you need to buy a TSS463C VAN controller and a REMQ 0339 VAN line driver (this is also known as Alcatel 2840). Unfortunately these are pretty hard to find but if you are lucky you can buy them on aliexpress (or you can also extract them from an old headunit or display).
 
-The schematics for the hardware looks like following:
+#### TSS463C + Rem0339 VAN line driver
 
 
-![schema](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema.png)
+![schema_remq0339](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema_tss463_remq0339.png)
+
+#### TSS463C + MCP2551 CAN transceiver
+
+Instead of the Remq 0339 it is also possible to use a CAN transceiver, for example the MCP2551
+
+![schema_mcp2551](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema_tss463_mcp2551.png)
+
 ### Installing
 Copy the following files to your **documents\Arduino\libraries\tss463_van** folder
   - tss463_channel_registers_struct.h
