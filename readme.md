@@ -20,13 +20,13 @@ To have the library working, you need to build a shield first as such thing does
 #### TSS463C + Rem0339 VAN line driver
 
 
-![schema_remq0339](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema_tss463_remq0339.png)
+![schema_tss463c_remq0339](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema_tss463c_remq0339.png)
 
 #### TSS463C + MCP2551 CAN transceiver
 
 Instead of the Remq 0339 it is also possible to use a CAN transceiver, for example the MCP2551
 
-![schema_mcp2551](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema_tss463_mcp2551.png)
+![schema_tss463c_mcp2551](https://github.com/morcibacsi/arduino_tss463_van/raw/master/schema/schema_tss463c_mcp2551.png)
 
 ### Installing
 Copy the following files to your **documents\Arduino\libraries\tss463_van** folder
