@@ -19,6 +19,10 @@ unsigned long previousTime = millis();
 //uint8_t dashboard_packet[14] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 uint8_t dashboard_packet[14] = { 0x8C, 0x00, 0x02, 0xB9, 0x00, 0x82, 0x8D, 0x4E, 0x59, 0x00, 0xFE, 0x01, 0x00, 0x00 };
 
+//1: dashboards made before 2004
+//2: dashboards made after  2004
+uint8_t dashboard_version = 1;
+
 SPIClass* spi;
 
 /* For dashboards made before 2004 */
@@ -62,7 +66,13 @@ void SendExternalTemperature(uint8_t channelId, int temperature)
 void Send524(uint8_t channelId)
 {
     uint8_t packet[16] = { 0xff, 0x20, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-    VANInterface->set_channel_for_transmit_message(channelId, 0x524, packet, 16, 0);
+
+    uint8_t messageLength = 16; //V2 dashboard has a message length of 16
+    if (dashboard_version == 1)
+    {
+        messageLength = 14;
+    }
+    VANInterface->set_channel_for_transmit_message(channelId, 0x524, packet, messageLength, 0);
 }
 
 void setup() {
@@ -88,8 +98,14 @@ void setup() {
     VANInterface = new VanMessageSender(VAN_CS_PIN, spi);
     VANInterface->begin();
 
-    //Send4FC_V1(0);
-    Send4FC_V2(0);
+    if (dashboard_version == 1)
+    {
+        Send4FC_V1(0);
+    }
+    else if (dashboard_version == 2)
+    {
+        Send4FC_V2(0);
+    }
     Send824(1);
     QueryInstrumentClusterForMileage(2);
     Ack664(3);
@@ -166,7 +182,13 @@ void loop() {
                 break;
             }
         }
-        //Send4FC_V1(0);
-        Send4FC_V2(0);
+        if (dashboard_version == 1)
+        {
+            Send4FC_V1(0);
+        }
+        else if (dashboard_version == 1)
+        {
+            Send4FC_V2(0);
+        }
     }
 }
