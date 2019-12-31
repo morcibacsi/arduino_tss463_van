@@ -186,7 +186,7 @@ void loop() {
         {
             Send4FC_V1(0);
         }
-        else if (dashboard_version == 1)
+        else if (dashboard_version == 2)
         {
             Send4FC_V2(0);
         }
