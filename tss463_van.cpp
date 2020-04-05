@@ -346,12 +346,9 @@ void TSS463_VAN::setup_channel(uint8_t channelId, uint16_t identifier, uint8_t i
     :ID_TAG         :  0x00  :                         ID_T [11:4]                           :
     :...............:........:...............................................................:
     */
-    register_set(CHANNEL_ADDR(channelId) + 0, id1);             //  ID_TAG
-    register_set(CHANNEL_ADDR(channelId) + 1, id2AndCommand);   //  ID_TAG, RNW = 0, RTR = 1
-    register_set(CHANNEL_ADDR(channelId) + 2, messagePointer);  //  MESS_PTR 0 ( 0x80 + 0) - MAILBOX ADDRESS
-    register_set(CHANNEL_ADDR(channelId) + 3, lengthAndStatus); //  M_L [4:0] = 0x1F Frame with 30 DATA bytes , CHER = 0, CHTx = 0, CHRx = 0
-    register_set(CHANNEL_ADDR(channelId) + 6, id1);             //  ID_MASK 9C4
-    register_set(CHANNEL_ADDR(channelId) + 7, id2);             //  ID_MASK
+    uint8_t data[] = { id1, id2AndCommand, messagePointer, lengthAndStatus, 0, 0, id1, id2 };
+
+    registers_set(CHANNEL_ADDR(channelId), data, 8);
 
     channels[channelId].MessageLengthAndStatusRegisterValue = lengthAndStatus;
     channels[channelId].IsOccupied = true;
