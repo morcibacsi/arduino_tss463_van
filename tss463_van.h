@@ -40,6 +40,10 @@
 #define INTERRUPTENABLE   0x0A   // r/w   - 0x80
 #define INTERRUPTRESET    0x0B   // w
 #pragma endregion
+
+#define TSS_8MHz_62k5BPS 0x30
+#define TSS_8MHz_125kBPS 0x20
+
 // Channels
 #define CHANNEL_ADDR(x) (0x10 + (0x08 * x))
 #define CHANNELS 14
@@ -51,6 +55,11 @@ typedef struct ChannelSetup {
     uint8_t MemoryLocation;
     uint16_t Identifier;
     bool IsOccupied;
+};
+
+enum VAN_SPEED {
+    VAN_62K5BPS,
+    VAN_125KBPS,
 };
 
 class TSS463_VAN
@@ -65,6 +74,7 @@ private:
     volatile int error = 0; // TSS463C out of sync error
     SPIClass *SPI;
     uint8_t SPICS;
+    uint8_t _lineControl;
     void tss_init();
     void motorolla_mode();
     uint8_t spi_transfer(volatile uint8_t data);
@@ -78,7 +88,7 @@ private:
     bool is_valid_channel(uint8_t channelId, uint16_t identifier);
 public:
 
-    TSS463_VAN(uint8_t _CS, SPIClass *_SPI);
+    TSS463_VAN(uint8_t _CS, SPIClass *_SPI, VAN_SPEED vanSpeed);
     bool set_channel_for_transmit_message(uint8_t channelId, uint16_t identifier, const uint8_t values[], uint8_t messageLength, uint8_t ack);
     bool set_channel_for_receive_message(uint8_t channelId, uint16_t identifier, uint8_t messageLength, uint8_t setAck);
     bool set_channel_for_reply_request_message_without_transmission(uint8_t channelId, uint16_t identifier, uint8_t messageLength);

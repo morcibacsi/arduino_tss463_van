@@ -2,6 +2,7 @@
 #include "VanMessageSender.h"
 
 const int VAN_PIN = 7;
+const VAN_NETWORK NETWORK = VAN_COMFORT;
 
 AbstractVanMessageSender *VANInterface;
 
@@ -33,7 +34,7 @@ void setup()
     #endif
 
     // instantiate the VanMessageSender class passing the CS pin and the SPI instance as a dependency
-    VANInterface = new VanMessageSender(VAN_PIN, spi);
+    VANInterface = new VanMessageSender(VAN_PIN, spi, NETWORK);
     VANInterface->begin();
 
     // IMPORTANT - it does matter in which order the channels are set up for the various request types

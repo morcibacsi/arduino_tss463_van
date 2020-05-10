@@ -12,6 +12,7 @@ const int MISO_PIN = 5;
 const int MOSI_PIN = 33;
 //const int VAN_PIN = 32; //ESP32
 const int VAN_PIN = 7; //Pro Mini
+const VAN_NETWORK NETWORK = VAN_COMFORT;
 
 AbstractVanMessageSender* VANInterface;
 unsigned long currentTime = millis();
@@ -82,7 +83,7 @@ void setup() {
     spi->begin(SCK_PIN, MISO_PIN, MOSI_PIN, VAN_PIN);
 #endif
 
-    VANInterface = new VanMessageSender(VAN_PIN, spi);
+    VANInterface = new VanMessageSender(VAN_PIN, spi, NETWORK);
     VANInterface->begin();
 }
 
