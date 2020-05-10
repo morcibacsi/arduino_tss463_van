@@ -23,7 +23,8 @@ void GetBytesFromIdentifier(uint16_t iden, uint8_t *byte1, uint8_t *byte2)
 void TSS463_VAN::tss_init() 
 {
     motorolla_mode();
-    _delay_ms(10);
+    delayMicroseconds(3);//at 8MHZ max speed (12 clocks XTAL)
+    //_delay_ms(10);
 
     reset_channels();
 
@@ -49,9 +50,9 @@ void TSS463_VAN::tss_init()
     #pragma endregion
 
     // Clock Divider 0010 - 0x02 ( TSCLK = XTAL1 / n * 16) or ( TSCLK = 16000000 / 2 * 16) or 500000
-    //register_set(LINECONTROL, 0x30); // 62.5 kbit/sec - VAN body
-    register_set(LINECONTROL, 0x20); // 125 kbit/sec - VAN comfort
-    _delay_ms(10);
+    register_set(LINECONTROL, 0x30); // 62.5 kbit/sec - VAN body
+    //register_set(LINECONTROL, 0x20); // 125 kbit/sec - VAN comfort
+    //_delay_ms(10);
 
     #pragma region Transmit Control Register (0x01) documentation
     /*
@@ -71,7 +72,7 @@ void TSS463_VAN::tss_init()
     #pragma endregion
 
     register_set(TRANSMITCONTROL, B00000011); // MR: 0011 (Maximum Retries = 0x01) VER 001 fixed
-    _delay_ms(10);
+    //_delay_ms(10);
 
 
     // Enable TSS Interrupts
@@ -130,7 +131,7 @@ void TSS463_VAN::tss_init()
     #pragma endregion
 
     register_set(INTERRUPTENABLE, intEnable);
-    _delay_ms(10);
+    //_delay_ms(10);
 
 
     #pragma region Command Register (0x03) documentation
@@ -164,7 +165,7 @@ void TSS463_VAN::tss_init()
     #pragma endregion
 
     register_set(COMMANDREGISTER, B10000);  // ACTI - activate line
-    _delay_ms(10);
+    //_delay_ms(10);
     error = 0;
 
     #pragma region Fill Message DATA RAM area with 0x00
@@ -191,19 +192,23 @@ void TSS463_VAN::register_set(uint8_t address, uint8_t value)
 
     TSS463_SELECT();
 
-    _delay_ms(4);
+    delayMicroseconds(1);//at 8MHZ max speed (4 clocks XTAL)
+    //_delay_ms(4);
     //At the beginning of a transmission over the serial interface, the first byte is the address of the TSS463C register to be accessed
     res = spi_transfer(address);
     if (res != ADDR_ANSW)
         error++;
-    _delay_ms(8);
+    delayMicroseconds(2);//at 8MHZ max speed (8 clocks XTAL)
+    //_delay_ms(8);
     //The next byte transmitted is the control byte that determines the direction of the communication
     res = spi_transfer(WRITE);
     if (res != CMD_ANSW)
         error++;
-    _delay_ms(15);
+    delayMicroseconds(4);//at 8MHZ max speed (15 clocks XTAL)
+    //_delay_ms(15);
     spi_transfer(value);
-    _delay_ms(12);
+    delayMicroseconds(3);//at 8MHZ max speed (12 clocks XTAL)
+    //_delay_ms(12);
 
     TSS463_UNSELECT();
 }
@@ -215,23 +220,27 @@ void TSS463_VAN::registers_set(uint8_t address, const uint8_t values[], uint8_t 
 
     TSS463_SELECT();
 
-    _delay_ms(4);
+    delayMicroseconds(1);//at 8MHZ max speed (4 clocks XTAL)
+    //_delay_ms(4);
     //At the beginning of a transmission over the serial interface, the first byte is the address of the TSS463C register to be accessed
     res = spi_transfer(address);
     if ( res != ADDR_ANSW)
-    error++;
-    _delay_ms(8);
+		error++;
+    delayMicroseconds(2);//at 8MHZ max speed (8 clocks XTAL)
+    //_delay_ms(8);
     //The next byte transmitted is the control byte that determines the direction of the communication
     res = spi_transfer(WRITE);
     if (res != CMD_ANSW)
     error++;
-    _delay_ms(15);
+    delayMicroseconds(4);//at 8MHZ max speed (15 clocks XTAL)
+    //_delay_ms(15);
   
     for (i = 0; i < count; i++)
     {
         spi_transfer(values[i]);
+		delayMicroseconds(3);//at 8MHZ max speed (12 clocks XTAL)
     }
-    _delay_ms(12);
+    //_delay_ms(12);
 
     TSS463_UNSELECT();
 }
@@ -242,20 +251,24 @@ uint8_t TSS463_VAN::register_get(uint8_t address)
 
     TSS463_SELECT();
 
-    _delay_ms(4);
+    delayMicroseconds(1);//at 8MHZ max speed (4 clocks XTAL)
+    //_delay_ms(4);
     //At the beginning of a transmission over the serial interface, the first byte is the address of the TSS463C register to be accessed
     value = spi_transfer(address);
     if (value != ADDR_ANSW)
         error++;
-    _delay_ms(8);
+    delayMicroseconds(2);//at 8MHZ max speed (8 clocks XTAL)
+    //_delay_ms(8);
     //The next byte transmitted is the control byte that determines the direction of the communication
     value = spi_transfer(READ);
     if (value != CMD_ANSW)
         error++;
-    _delay_ms(15);
+    delayMicroseconds(4);//at 8MHZ max speed (15 clocks XTAL)
+    //_delay_ms(15);
     //When the master (CPU) conducts a read, it sends an address byte, a control byte and dummy characters (�0xFF�for instance) on its MOSI line
     value = spi_transfer(0xff);
-    _delay_ms(12);
+    delayMicroseconds(3);//at 8MHZ max speed (12 clocks XTAL)
+    //_delay_ms(12);
 
     TSS463_UNSELECT();
 
@@ -268,25 +281,29 @@ uint8_t TSS463_VAN::registers_get(uint8_t address, volatile uint8_t values[], ui
 
     TSS463_SELECT();
 
-    _delay_ms(4);
+    delayMicroseconds(1);//at 8MHZ max speed (4 clocks XTAL)
+    //_delay_ms(4);
     //At the beginning of a transmission over the serial interface, the first byte is the address of the TSS463C register to be accessed
     value = spi_transfer(address);
     if (value != ADDR_ANSW)
         error++;
-    _delay_ms(8);
+    delayMicroseconds(2);//at 8MHZ max speed (8 clocks XTAL)
+    //_delay_ms(8);
     //The next byte transmitted is the control byte that determines the direction of the communication
     value = spi_transfer(READ);
     if (value != CMD_ANSW)
         error++;
-    _delay_ms(15);
+    delayMicroseconds(4);//at 8MHZ max speed (15 clocks XTAL)
+    //_delay_ms(15);
     //When the master (CPU) conducts a read, it sends an address byte, a control byte and dummy characters (�0xFF�for instance) on its MOSI line
 
     // TSS463 has auto-increment of address-pointer
     for (uint8_t i = 0; i < count; i++)
     {
         values[i] = spi_transfer(0xff);
+		delayMicroseconds(3);//at 8MHZ max speed (12 clocks XTAL)
     }
-    _delay_ms(12);
+    //_delay_ms(12);
 
     TSS463_UNSELECT();
 
@@ -299,15 +316,18 @@ void TSS463_VAN::motorolla_mode()
 
     TSS463_SELECT();
 
-    _delay_ms(4);
+    delayMicroseconds(1);//at 8MHZ SCLK speed (4 clocks XTAL)
+    //_delay_ms(4);
     value = spi_transfer(MOTOROLA_MODE);
     if (value != ADDR_ANSW)
         error++;
-    _delay_ms(8);
+    delayMicroseconds(2);//at 8MHZ SCLK speed (8 clocks SCLK)
+    //_delay_ms(8);
     value = spi_transfer(MOTOROLA_MODE);
     if (value != CMD_ANSW)
         error++;
-    _delay_ms(12);
+    delayMicroseconds(2);//at 8MHZ max speed (8 clocks SCLK)
+    //_delay_ms(12);
 
     TSS463_UNSELECT();
 }
@@ -402,7 +422,7 @@ void TSS463_VAN::reset_channels()
 {
     for (uint8_t i = 0; i < CHANNELS; i++) {
         disable_channel(i);
-        _delay_ms(10);
+        //_delay_ms(10);
     }
     next_free_memory_address = 0;
 }
