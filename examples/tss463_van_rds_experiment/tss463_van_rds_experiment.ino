@@ -61,7 +61,7 @@ void Send8D4_2(uint8_t channelId)
 
 void AnswerTo554(uint8_t channelId) {
     uint8_t RDS[] = { ' ', 'P', 'e', 'u', 'g', 'e', 'o', 't', ' ', ' ' };
-    uint8_t packet[22] = { headerByte, 0xD1, 0x09, 0x80, 0xC2, 0x03, 0x63, 0x60, 0xFF, 0xFF, 0xA1, RDS[0], RDS[1], RDS[2], RDS[3], RDS[4], RDS[5], RDS[6], RDS[7], RDS[8], RDS[9], headerByte };
+    uint8_t packet[22] = { headerByte, 0xD1, 0x00, 0x80, 0xC2, 0x03, 0x63, 0x60, 0xFF, 0xFF, 0xA1, RDS[0], RDS[1], RDS[2], RDS[3], RDS[4], RDS[5], RDS[6], RDS[7], RDS[8], RDS[9], headerByte };
     VANInterface->set_channel_for_immediate_reply_message(channelId, 0x554, packet, 22);
 }
 
