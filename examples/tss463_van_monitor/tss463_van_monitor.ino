@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include "VanMessageSender.h"
 
-const int VAN_PIN = 7;
+int VAN_PIN = 7;
 const VAN_NETWORK NETWORK = VAN_COMFORT;
 
 AbstractVanMessageSender *VANInterface;
@@ -29,8 +29,20 @@ void setup()
 
     #ifdef ARDUINO_ARCH_ESP32
         // You can select which pins to use as SPI on ESP32 boards by passing the SCK, MISO, MOSI, SS as arguments (in this order) to the spi->begin() method
-        //spi->begin(12, 22, 23, VAN_PIN);
-        spi->begin(13, 5, 12, VAN_PIN);
+        const uint8_t SCK_PIN = 25;
+        const uint8_t MISO_PIN = 5;
+        const uint8_t MOSI_PIN = 33;
+        VAN_PIN = 32;
+
+        spi->begin(SCK_PIN, MISO_PIN, MOSI_PIN, VAN_PIN);
+    #endif
+
+    #ifdef ARDUINO_ARCH_STM32
+        VAN_PIN = PB12;
+        spi->setMOSI(PB15);
+        spi->setMISO(PB14);
+        spi->setSCLK(PB13);
+        spi->begin();
     #endif
 
     // instantiate the VanMessageSender class passing the CS pin and the SPI instance as a dependency
