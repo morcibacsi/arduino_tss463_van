@@ -40,6 +40,7 @@ Check the **tss463_van_monitor** and **tss463_van_dashboard_experiment** folders
 ### Tested boards
 - Arduino UNO/Nano/Pro Mini
 - ESP32
+- STM32 BluePill
 
 ### See also
 - [VAN Analyzer for Saleae Logic Analyzer][van_analyzer]
