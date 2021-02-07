@@ -53,6 +53,7 @@
 typedef struct ChannelSetup {
     uint8_t MessageLengthAndStatusRegisterValue;
     uint8_t MemoryLocation;
+    uint8_t MessageLength;
     uint16_t Identifier;
     bool IsOccupied;
 };
@@ -83,7 +84,6 @@ private:
     uint8_t registers_get(uint8_t address, volatile uint8_t values[], uint8_t count);
     void registers_set(uint8_t address, const uint8_t values[], uint8_t n);
     void setup_channel(uint8_t channelId, uint16_t identifier, uint8_t id1, uint8_t id2, uint8_t id2AndCommand, uint8_t messagePointer, uint8_t lengthAndStatus);
-    void disable_channel(uint8_t channelId);
     uint8_t get_memory_address_to_use(uint8_t channelId, uint8_t messageLength);
     bool is_valid_channel(uint8_t channelId, uint16_t identifier);
 public:
@@ -103,6 +103,7 @@ public:
     uint8_t get_last_channel();
     void set_value_in_channel(uint8_t channelId, uint8_t index0, uint8_t value);
     void begin();
+    void disable_channel(uint8_t channelId);
 };
 
 extern TSS463_VAN VAN;

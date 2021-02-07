@@ -362,11 +362,19 @@ uint8_t TSS463_VAN::get_memory_address_to_use(uint8_t channelId, uint8_t message
     {
         return channels[channelId].MemoryLocation;
     }
+    else
+    {
+        if (channels[channelId].MessageLength != 0 && channels[channelId].MessageLength <= messageLength)
+        {
+            return channels[channelId].MemoryLocation;
+        }
+    }
 
     uint8_t result = next_free_memory_address;
     if (next_free_memory_address + messageLength <= TSS463C_RAM_SIZE_IN_BYTES - 1)
     {
         channels[channelId].MemoryLocation = next_free_memory_address;
+        channels[channelId].MessageLength = messageLength;
         next_free_memory_address = next_free_memory_address + messageLength;
 
         return result;
