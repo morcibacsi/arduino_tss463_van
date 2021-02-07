@@ -12,11 +12,13 @@ SPIClass* spi;
 
 uint8_t headerByte = 0x80;
 
+unsigned long prevTime = 0;
+
 char incomingByte;
 
 void setup()
 {
-    Serial.begin(230400);
+    Serial.begin(500000);
     Serial.println("Arduino VAN bus monitor using TSS463C");
 
     // initialize SPI
@@ -52,6 +54,7 @@ void setup()
     // IMPORTANT - it does matter in which order the channels are set up for the various request types
     // This is because how priority among different channels is taken into consideration (see Page 46 in documentation for further info)
 
+    //if you would like to try out the VAN sending functions then disable the following channel setups
     van_setup_channel(0); //#1 reply request message
     van_setup_channel(1); //#2 receive message
     van_setup_channel(2); //#3 reply request without transmission message
@@ -122,7 +125,36 @@ void AnswerToCDC()
     VANInterface->set_channel_for_immediate_reply_message(8, 0x4EC, packet, 12);
 }
 
+/*
+    When the display detects a button press message it will ask for the trip data, which we will answer with the next method
+*/
+void TripButtonPressed()
+{
+    uint8_t packetTrip[2] = { 0x12, 0x08 };
+    VANInterface->set_channel_for_transmit_message(3, 0x8C4, packetTrip, 2, 1);
+}
+
+/*
+    When the display asks for the trip data, this answer is sent by the BSI
+*/
+void AnswerToTripData(uint8_t tripButton)
+{
+    headerByte = (headerByte == 0x87) ? 0x80 : headerByte + 1;
+
+    uint8_t packet[27] = { headerByte, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, tripButton, 0x00, 0x36, 0x06, 0x00, 0x00, 0xFF, 0xFF, 0x0D, 0x29, 0x00, 0x40, 0xFF, 0xFF, 0xFF, 0xFF, headerByte };
+    VANInterface->set_channel_for_immediate_reply_message(8, 0x564, packet, 27);
+}
+
 void loop() {
+    
+    unsigned long currentTime = millis();
+
+/*
+    if (currentTime - prevTime > 20){
+      prevTime = currentTime;
+      SendExternalTemperature(10);
+    }
+*/
     if (Serial.available()>0)
     {
         int inChar = Serial.read();
@@ -150,10 +182,21 @@ void loop() {
                 AnswerToCDC();
                 break;
             }
+            case 'r': {
+                TripButtonPressed();
+                AnswerToTripData(0x51);
+                delay(20);
+
+                TripButtonPressed();
+                AnswerToTripData(0x50);
+                break;
+            }
             default:
                 break;
         }
     }
+
+    //if you would like to try out the VAN sending functions then disable the following loop
     for (uint8_t channel = 0; channel < 4; channel++)
     {
         MessageLengthAndStatusRegister messageAvailable = VANInterface->message_available(channel);
