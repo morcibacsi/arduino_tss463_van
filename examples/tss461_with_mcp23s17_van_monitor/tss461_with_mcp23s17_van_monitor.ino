@@ -1,18 +1,13 @@
 #include <SPI.h>
 #include <itss46x.h>
 #include <tss46x_van.h>
-
-#include <tss463.h>
-#include <tss461_intel.h>
-#include <tss46x_with_serial.h>
+#include "tss461_with_mcp23s17_intel.h"
 
 uint8_t VAN_PIN = 7;
 
-TSSPinSetup* pinSetup;
-
 SPIClass* spi;
-ITss46x* vanSender;
 TSS46X_VAN* VANInterface;
+ITss46x* vanSender;
 
 uint8_t vanMessageLength;
 uint8_t vanMessage[32];
@@ -22,33 +17,13 @@ uint8_t check = 0x00;
 
 char incomingByte;
 
-void InitTss461()
+void setup()
 {
-     // instantiate the VAN message sender for a TSS461
-    pinSetup = new TSSPinSetup();
+    Serial.begin(500000);
+    delay(3000);
+    Serial.println("Arduino VAN bus monitor using TSS463C");
 
-    #ifdef ARDUINO_ARCH_STM32
-    pinSetup->TSS_ALE_PIN   = PB13;
-    pinSetup->TSS_WRITE_PIN = PB15;
-    pinSetup->TSS_CS_PIN    = PB12;
-    pinSetup->TSS_READ_PIN  = PA8;
-    pinSetup->TSS_RESET_PIN = PB14;
-
-    pinSetup->TSS_AD0_PIN   = PA0;
-    pinSetup->TSS_AD1_PIN   = PA1;
-    pinSetup->TSS_AD2_PIN   = PA2;
-    pinSetup->TSS_AD3_PIN   = PA3;
-    pinSetup->TSS_AD4_PIN   = PA4;
-    pinSetup->TSS_AD5_PIN   = PA5;
-    pinSetup->TSS_AD6_PIN   = PA6;
-    pinSetup->TSS_AD7_PIN   = PA7;
-    #endif
-    vanSender = new Tss461Intel(pinSetup);
-}
-
-void InitTss463()
-{
-      // initialize SPI
+    // initialize SPI
     spi = new SPIClass();
 
     #ifdef ARDUINO_ARCH_AVR
@@ -66,33 +41,14 @@ void InitTss463()
         spi->begin(SCK_PIN, MISO_PIN, MOSI_PIN, VAN_PIN);
     #endif
 
-    // instantiate the VAN message sender for a TSS463
-    vanSender = new Tss463(VAN_PIN, spi);
-}
-
-void InitTssSerial()
-{
-    // This "VAN message sender" just prints the values of the TSS registers to the Serial port, included as an example for an abstract sender
-    vanSender = new Tss46xWithSerial(Serial);
-}
-
-void setup()
-{
-    Serial.begin(500000);
-    delay(3000);
-    Serial.println("Arduino VAN bus monitor using TSS463C");
-
-    InitTss463();
-    //InitTss461();
-    //InitTssSerial();
-
+    // instantiate the VanMessageSender class passing the CS pin and the SPI instance as a dependency
+    vanSender = new Tss461WithMcp23s17Intel(VAN_PIN, spi);
     VANInterface = new TSS46X_VAN(vanSender, VAN_125KBPS);
     VANInterface->begin();
 
     // IMPORTANT - it does matter in which order the channels are set up for the various request types
     // This is because how priority among different channels is taken into consideration (see Page 46 in documentation for further info)
 
-    // if you would like to try out VAN reading then enable the following channel setups
     //van_setup_channel(0); //#1 reply request message
     van_setup_channel(1); //#2 receive message
     //van_setup_channel(2); //#3 reply request without transmission message
@@ -104,7 +60,7 @@ void van_setup_channel(int channel)
     switch (channel)
     {
         case 0:
-            VANInterface->set_channel_for_reply_request_message_without_transmission(channel, 0x00, 30);
+            VANInterface-> set_channel_for_reply_request_message_without_transmission(channel, 0x00, 30);
             break;
         case 1:
             VANInterface->set_channel_for_receive_message(channel, 0x00, 30, 0);
@@ -164,7 +120,7 @@ void AnswerToCDC()
 }
 
 void loop() {
-
+  //SendExternalTemperature(15);
     if (Serial.available()>0)
     {
         int inChar = Serial.read();
@@ -192,7 +148,7 @@ void loop() {
                 SendExternalTemperature(10);
                 break;
             }
-            case 'p': {
+            case 'r': {
                 Serial.println("Read");
                 VANInterface->read_message(1, &vanMessageLength, vanMessage);
 
@@ -216,22 +172,10 @@ void loop() {
                 AnswerToCDC();
                 break;
             }
-            case 'r': {
-                TripButtonPressed();
-                AnswerToTripData(0x51);
-                delay(20);
-
-                TripButtonPressed();
-                AnswerToTripData(0x50);
-                break;
-            }
             default:
                 break;
         }
     }
-
-    //if you would like to try out VAN reading then enable the following loop
-
     //
     /*
     for (uint8_t channel = 0; channel < 4; channel++)

@@ -5,23 +5,26 @@
 */
 #include <Arduino.h>
 #include <SPI.h>
-#include "VanMessageSender.h"
+#include <itss46x.h>
+#include <tss46x_van.h>
+
+#include <tss463.h>
+
+SPIClass* spi;
+ITss46x* vanSender;
+TSS46X_VAN* VANInterface;
 
 const int SCK_PIN = 25;
 const int MISO_PIN = 5;
 const int MOSI_PIN = 33;
 //const int VAN_PIN = 32; //ESP32
 const int VAN_PIN = 7; //Pro Mini
-const VAN_NETWORK NETWORK = VAN_COMFORT;
 
-AbstractVanMessageSender* VANInterface;
 unsigned long currentTime = millis();
 unsigned long previousTime = millis();
 volatile uint8_t headerByte = 0x80;
 volatile bool isRadioTurnedOn = false;
 volatile uint8_t sendCount = 0;
-
-SPIClass* spi;
 
 void IncrementHeader()
 {
@@ -61,7 +64,7 @@ void Send8D4_2(uint8_t channelId)
 
 void AnswerTo554(uint8_t channelId) {
     uint8_t RDS[] = { ' ', 'P', 'e', 'u', 'g', 'e', 'o', 't', ' ', ' ' };
-    uint8_t packet[22] = { headerByte, 0xD1, 0x00, 0x80, 0xC2, 0x03, 0x63, 0x60, 0xFF, 0xFF, 0xA1, RDS[0], RDS[1], RDS[2], RDS[3], RDS[4], RDS[5], RDS[6], RDS[7], RDS[8], RDS[9], headerByte };
+    uint8_t packet[22] = { headerByte, 0xD1, 0x09, 0x80, 0xC2, 0x03, 0x63, 0x60, 0xFF, 0xFF, 0xA1, RDS[0], RDS[1], RDS[2], RDS[3], RDS[4], RDS[5], RDS[6], RDS[7], RDS[8], RDS[9], headerByte };
     VANInterface->set_channel_for_immediate_reply_message(channelId, 0x554, packet, 22);
 }
 
@@ -83,7 +86,8 @@ void setup() {
     spi->begin(SCK_PIN, MISO_PIN, MOSI_PIN, VAN_PIN);
 #endif
 
-    VANInterface = new VanMessageSender(VAN_PIN, spi, NETWORK);
+    vanSender = new Tss463(VAN_PIN, spi);
+    VANInterface = new TSS46X_VAN(vanSender, VAN_125KBPS);
     VANInterface->begin();
 }
 

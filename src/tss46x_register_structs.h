@@ -1,14 +1,39 @@
-// tss463_channel_registers_struct.h
+// tss46x_register_structs.h
 #pragma once
 
-#ifndef _tss463_channel_registers_struct_h
-    #define _tss463_channel_registers_struct_h
+#ifndef _tss46x_register_structs_h
+    #define _tss46x_register_structs_h
 
     #if defined(ARDUINO) && ARDUINO >= 100
         #include "Arduino.h"
     #else
         #include "WProgram.h"
     #endif
+
+typedef union
+{
+    struct
+    {
+        //Receive "with no RAK (RAK=0)" OK Status Flag
+        uint8_t RNOK   : 1;
+        //Receive "with RAK (RAK=1)" OK Status Flag
+        uint8_t ROK    : 1;
+        //Receive Error Status Flag
+        uint8_t RE     : 1;
+        //Transmit OK Status Flag
+        uint8_t TOK    : 1;
+        //Transmit Error Status Flag (or Exceeded Retry)
+        uint8_t TE     : 1;
+        //Not available
+        uint8_t NA1    : 1;
+        //Not available
+        uint8_t NA2    : 1;
+        //Not available
+        uint8_t FIXONE : 1;
+    }data;
+    uint8_t Value;
+}InterruptEnableRegister;
+
 
 /*
 Message Length And Status Register

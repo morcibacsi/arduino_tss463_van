@@ -3,16 +3,20 @@
 */
 #include <Arduino.h>
 #include <SPI.h>
-#include "VanMessageSender.h"
+#include <itss46x.h>
+#include <tss46x_van.h>
+#include <tss463.h>
 
 const int SCK_PIN = 25;
 const int MISO_PIN = 5;
 const int MOSI_PIN = 33;
 //const int VAN_CS_PIN = 32; //ESP32
 const int VAN_CS_PIN = 7; //Pro Mini
-const VAN_NETWORK NETWORK = VAN_COMFORT;
 
-AbstractVanMessageSender* VANInterface;
+SPIClass* spi;
+ITss46x* vanSender;
+TSS46X_VAN* VANInterface;
+
 unsigned long currentTime = millis();
 unsigned long previousTime = millis();
 
@@ -24,8 +28,6 @@ volatile uint8_t b2 = 0x00;
 
 uint8_t vanMessageLength;
 uint8_t vanMessage[32];
-
-SPIClass* spi;
 
 void IncrementHeader()
 {
@@ -157,7 +159,8 @@ void setup() {
     spi->begin(SCK_PIN, MISO_PIN, MOSI_PIN, VAN_CS_PIN);
 #endif
 
-    VANInterface = new VanMessageSender(VAN_CS_PIN, spi, NETWORK);
+    vanSender = new Tss463(VAN_CS_PIN, spi);
+    VANInterface = new TSS46X_VAN(vanSender, VAN_125KBPS);
     VANInterface->begin();
 
     AnswerADC_keep_alive(4);
