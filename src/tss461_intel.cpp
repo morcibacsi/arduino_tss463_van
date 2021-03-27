@@ -23,7 +23,7 @@ void Tss461Intel::set_bus_direction(uint8_t direction) {
         }
     }
     else {
-        for (size_t i = 8; i < 8; i++)
+        for (size_t i = 0; i < 8; i++)
         {
             pinMode(data_pins[i], INPUT);
         }
