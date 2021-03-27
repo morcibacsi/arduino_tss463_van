@@ -1,4 +1,5 @@
 #include "tss461_intel.h"
+#include <Arduino.h>
 
 Tss461Intel::Tss461Intel(TSSPinSetup *pinSetup){
     _pinSetup = pinSetup;

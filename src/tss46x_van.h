@@ -7,12 +7,6 @@
 #include "tss46x_register_structs.h"
 #include "itss46x.h"
 
-#if defined(ARDUINO) && ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include "WProgram.h"
-#endif
-
 typedef struct ChannelSetup {
     uint8_t MessageLengthAndStatusRegisterValue;
     uint8_t MemoryLocation;

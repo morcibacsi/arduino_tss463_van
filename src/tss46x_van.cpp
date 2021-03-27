@@ -1,4 +1,6 @@
 #include "tss46x_van.h"
+#include <binary.h>
+#include <string.h>
 
 int ExtractBits(uint16_t value, uint16_t numberOfBits, uint16_t pos)
 {

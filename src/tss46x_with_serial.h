@@ -7,12 +7,8 @@
 #include "tss46x_register_structs.h"
 #include "itss46x.h"
 
-#if defined(ARDUINO) && ARDUINO >= 100
-    #include <Arduino.h>
-    #include <SPI.h>
-#else
-    #include "WProgram.h"
-#endif
+#include <stdint.h>
+#include <HardwareSerial.h>
 
 /*
     This is a sample VAN message sender, which prints the register locations and values to the serial output

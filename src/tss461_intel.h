@@ -7,12 +7,7 @@
 #include "tss46x_register_structs.h"
 #include "itss46x.h"
 
-#if defined(ARDUINO) && ARDUINO >= 100
-    #include <Arduino.h>
-    #include <SPI.h>
-#else
-    #include "WProgram.h"
-#endif
+#include <stdint.h>
 
 /*
     This is the implementation of the TSS461 with multiplexed address and data bus in intel mode.

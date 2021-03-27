@@ -3,11 +3,7 @@
 #ifndef _itss46x
 #define _itss46x
 
-#if defined(ARDUINO) && ARDUINO >= 100
-    #include <Arduino.h>
-#else
-    #include "WProgram.h"
-#endif
+#include <stdint.h>
 
 /*
     An interface to abstract the hardware specific part of the VAN controller. 
