@@ -125,7 +125,7 @@ void Tss461Intel::registers_set(uint8_t address, const uint8_t values[], uint8_t
 }
 
 uint8_t Tss461Intel::registers_get(uint8_t address, volatile uint8_t values[], uint8_t count){
-    uint8_t value;
+    uint8_t value = 0;
 
     uint8_t address_to_read = address;
 

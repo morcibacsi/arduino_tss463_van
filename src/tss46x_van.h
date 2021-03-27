@@ -7,7 +7,7 @@
 #include "tss46x_register_structs.h"
 #include "itss46x.h"
 
-typedef struct ChannelSetup {
+struct ChannelSetup {
     uint8_t MessageLengthAndStatusRegisterValue;
     uint8_t MemoryLocation;
     uint8_t MessageLength;

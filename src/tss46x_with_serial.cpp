@@ -46,7 +46,7 @@ uint8_t Tss46xWithSerial::register_get(uint8_t address) {
 }
 
 uint8_t Tss46xWithSerial::registers_get(uint8_t address, volatile uint8_t values[], uint8_t count) {
-    uint8_t value;
+    uint8_t value = 0;
 
     for (uint8_t i = 0; i < count; i++)
     {
