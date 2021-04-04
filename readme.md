@@ -117,9 +117,6 @@ void setup()
 }
 ```
 
-### TODO
-Currently reading of the registers does not work on the TSS461. A pull request is very welcome for this.
-
 ### Installing
 Copy the files to your **documents\Arduino\libraries\tss46x_van** folder or install it via the Arduino library manager
 

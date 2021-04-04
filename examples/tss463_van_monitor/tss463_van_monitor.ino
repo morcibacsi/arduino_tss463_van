@@ -163,6 +163,21 @@ void AnswerToCDC()
     VANInterface->set_channel_for_immediate_reply_message(8, 0x4EC, packet, 12);
 }
 
+void TripButtonPressed()
+{
+    uint8_t packetTrip[2] = { 0x12, 0x08 };
+    VANInterface->set_channel_for_transmit_message(3, 0x8C4, packetTrip, 2, 1);
+    //0E 8C 4C 12 08 45 72
+}
+
+void AnswerToTripData(uint8_t tripButton)
+{
+    headerByte = (headerByte == 0x87) ? 0x80 : headerByte + 1;
+
+    uint8_t packet[27] = { headerByte, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, tripButton, 0x00, 0x36, 0x06, 0x00, 0x00, 0xFF, 0xFF, 0x0D, 0x29, 0x00, 0x40, 0xFF, 0xFF, 0xFF, 0xFF, headerByte };
+    VANInterface->set_channel_for_immediate_reply_message(8, 0x564, packet, 27);
+}
+
 void loop() {
 
     if (Serial.available()>0)
