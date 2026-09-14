@@ -478,7 +478,7 @@ bool TSS46X_VAN::set_channel_for_reply_request_message(uint8_t channelId, uint16
         //Page38
         MessagePointerRegister messagePointer;
         memset(&messagePointer, 0, sizeof(messagePointer));
-        messagePointer.data.DRAK = 1;
+        messagePointer.data.DRAK = 0;
         messagePointer.data.M_P = memory_address;
 
         //Page 39
